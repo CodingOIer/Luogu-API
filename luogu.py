@@ -1,17 +1,49 @@
-import re
 import requests
 import json
 import urllib
 
 cookie = ''
 
+lang = {
+    "C++14 (GCC 9)": 0,
+    "Pascal": 1,
+    "C": 2,
+    "C++98": 3,
+    "C++11": 4,
+    "Unknown1": 5,
+    "Unknown2": 6,
+    "Python 3": 7,
+    "Java 8": 8,
+    "Node.js LTS": 9,
+    "Unknown4": 10,
+    "C++14": 11,
+    "C++17": 12,
+    "Ruby": 13,
+    "Go": 14,
+    "Rust": 15,
+    "PHP": 16,
+    "C# Mono": 17,
+    "Unknown5": 18,
+    "Haskell": 19,
+    "Unknown6": 20,
+    "Kotlin/JVM": 21,
+    "Unknown7": 22,
+    "Perl": 23,
+    "Unknown8": 24,
+    "PyPy 3": 25,
+    "Unknown9": 26,
+    "C++20": 27,
+    "C++14 (GCC 9) Copy": 28,
+    "Unknown10": 29,
+    "OCaml": 30,
+    "Julia": 31,
+    "Lua": 32,
+    "Java 21": 33
+}
+
 
 def urlDecode(code: str):
     return urllib.parse.unquote(code)
-
-
-def unicodeDecode(s):
-    return s.encode().decode('unicode_escape')
 
 
 def rmb(s: str, t: str):
@@ -30,16 +62,6 @@ def rma(s: str, t: str):
 
 def rmd(s: str, l: str, r: str):
     return rma(rmb(s, l), r)
-
-
-def formatResult(res):
-    pt = r'"__CLASS_NAME":"?([^"\\]*(?:\\.[^"\\]*)*)"?'
-    ma = re.findall(pt, res)
-    if ma:
-        di = {match: match.replace("\\", "\\\\") for match in ma}
-        for ol, ne in di.items():
-            res = res.replace(ol, ne)
-    return res
 
 
 def updateCookie(_uid: str, __client_id: str):
@@ -61,7 +83,7 @@ def getCsrfToken(url='https://www.luogu.com.cn'):
     return csrftoken
 
 
-def getGetHeaders(url='https://www.luogu.com.cn'):
+def getHeaders(url='https://www.luogu.com.cn'):
     headers = {
         'referer': url,
         'cookie': cookie,
@@ -74,16 +96,22 @@ def getGetHeaders(url='https://www.luogu.com.cn'):
 class problem:
     def list(args: str = ''):
         url = f'https://www.luogu.com.cn/problem/list?{args}'
-        response = requests.get(url=url, headers=getGetHeaders(url))
+        response = requests.get(url=url, headers=getHeaders(url))
         response = rmd(
             response.text, 'JSON.parse(decodeURIComponent("', '"));')
-        response = formatResult(unicodeDecode(urlDecode(response)))
-        return json.loads(urlDecode(response))
+        response = urlDecode(response)
+        return json.loads(response)
 
     def get(uid: str):
         url = f'https://www.luogu.com.cn/problem/{uid}'
-        response = requests.get(url=url, headers=getGetHeaders(url))
+        response = requests.get(url=url, headers=getHeaders(url))
         response = rmd(
             response.text, 'JSON.parse(decodeURIComponent("', '"));')
-        response = formatResult(unicodeDecode(urlDecode(response)))
-        return json.loads(urlDecode(response))
+        response = urlDecode(response)
+        return json.loads(response)
+
+    def submit(uid: str, code: str, lang: int = 0, o2: int = 1):
+        url = f'https://www.luogu.com.cn/fe/api/problem/submit/{uid}'
+        response = requests.post(url=url, headers=getHeaders(
+            f'https://www.luogu.com.cn/problem/{uid}'), json={"code": code, "o2": o2, "lang": lang})
+        return json.loads(response.text)
