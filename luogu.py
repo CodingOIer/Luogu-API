@@ -3,7 +3,6 @@ import json
 import urllib
 import random
 import imageio
-import time
 from PIL import Image
 
 lang = {
@@ -66,6 +65,11 @@ def rmd(s: str, l: str, r: str):
     return rma(rmb(s, l), r)
 
 
+def ocr(img: list):
+    return requests.post(
+        "http://ocr.api.codingoier.work/ocr/file", files={'image': img}).text
+
+
 class session:
 
     def __init__(self):
@@ -105,17 +109,13 @@ class session:
             characters = '0123456789abcdef'
             result = ''.join(random.choice(characters)
                              for _ in range(length))
-            print(result)
             return result
 
         def getCaptcha(self):
             url = 'https://www.luogu.com.cn/lg4/captcha'
             response = requests.post(
                 url=url, headers=self.session.getHeaders('https://luogu.com.cn/auth/login'))
-            stream = response.content
-            img = imageio.imread(stream, format='PNG')
-            imageio.imsave('output.png', img)
-            pass
+            return response.content
 
         def loginCookie(self, _uid: str, __client_id: str):
             self.session.uid = _uid
@@ -124,20 +124,21 @@ class session:
 
         def login(self, uid: str, passwd: str):
             self.loginCookie('0', self.makeCookie())
-            self.getCaptcha()
-            img = Image.open('output.png')
-            img.show()
-            res = input('input captcha: ')
+            res = ocr(self.getCaptcha())
             url = 'https://www.luogu.com.cn/do-auth/password'
             h = self.session.getHeaders(
                 'https://www.luogu.com.cn/auth/login')
             response = requests.post(url=url, headers=h, json={
                                      "username": uid, "password": passwd, "captcha": res})
             if response.status_code == 200:
-                return [True, None]
+                temp = json.loads(response.text)
+                return [True, temp['username']]
             else:
-                temp = json.dumps(response.text())
-                return [False, temp['errorType']]
+                temp = json.loads(response.text)
+                if (temp['errorType'] == 'LuoguWeb\\Spilopelia\\Exception\\CaptchaNotMatchException'):
+                    return self.login(uid, passwd)
+                else:
+                    return [False, None]
 
     class problem:
         def __init__(self, session):
