@@ -180,7 +180,7 @@ class session:
             if response['code'] == 400:
                 return [False, 'Invalid Arguments']
             else:
-                return [True, response['currentData']['problems']]
+                return [True, response]
 
         def get(self, uid: str):
             '''
@@ -240,4 +240,4 @@ class session:
             response = rmd(
                 response.text, 'JSON.parse(decodeURIComponent("', '"));')
             response = urlDecode(response)
-            return [True, response]
+            return [True, json.loads(response)]

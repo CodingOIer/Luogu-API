@@ -70,6 +70,9 @@ def ocr(img: list):
 
 
 class session:
+    '''
+    洛谷用户会话
+    '''
 
     def __init__(self):
         self.uid = ''
@@ -142,12 +145,10 @@ class session:
             '''
             self.loginCookie('0', self.makeCookie())
             res = ocr(self.getCaptcha())
-            print(f'Try {res}')
             url = 'https://www.luogu.com.cn/do-auth/password'
-            h = self.session.getHeaders(
-                'https://www.luogu.com.cn/auth/login')
-            response = requests.post(url=url, headers=h, json={
-                                     "username": uid, "password": passwd, "captcha": res})
+            response = requests.post(url=url, headers=self.session.getHeaders(
+                'https://www.luogu.com.cn/auth/login'), json={
+                "username": uid, "password": passwd, "captcha": res})
             if response.status_code == 200:
                 temp = json.loads(response.text)
                 self.loginCookie(uid, self.session.client)
@@ -179,7 +180,7 @@ class session:
             if response['code'] == 400:
                 return [False, 'Invalid Arguments']
             else:
-                return [True, response['currentData']['problems']]
+                return [True, response]
 
         def get(self, uid: str):
             '''
@@ -232,12 +233,11 @@ class session:
             @return 如果成功获取返回 [True, <题解 json 格式数据>], 失败返回原因 [False, <Problem Not Found>]
             '''
             url = f'https://www.luogu.com.cn/problem/solution/{uid}'
-            h = self.session.getHeaders(url)
-            print(h)
-            response = requests.get(url=url, headers=h)
+            response = requests.get(
+                url=url, headers=self.session.getHeaders(url))
             if response.status_code == 404:
                 return [False, 'Problem Not Found']
             response = rmd(
                 response.text, 'JSON.parse(decodeURIComponent("', '"));')
             response = urlDecode(response)
-            return [True, response]
+            return [True, json.loads(response)]
